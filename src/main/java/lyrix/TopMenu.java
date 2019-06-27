@@ -1,25 +1,32 @@
 package lyrix;
 
 import javax.swing.*;
+import javax.xml.soap.SOAPException;
+import javax.xml.transform.TransformerException;
 import java.awt.*;
-import java.io.File;
+import java.io.IOException;
 
-import static lyrix.ButtonFactory.makeButton;
 
 class TopMenu extends JPanel {
-    private ICommand expandCommand;
-    private ICommand collapseCommand;
     private final MainFrame mainFrame;
 
     TopMenu(final MainFrame mainFrame, ICommand expandCommand, ICommand collapseCommand) {
         this.mainFrame = mainFrame;
-        this.expandCommand = expandCommand;
-        this.collapseCommand = collapseCommand;
-        JButton expandTreeButton = makeButton("Развернуть дерево", actionEvent -> expandCommand.execute());
 
-        JButton collapseTreeButton = makeButton("Свернуть дерево", actionEvent -> collapseCommand.execute());
+        JButton expandTreeButton = new JButton("Развернуть дерево");
+        expandTreeButton.addActionListener(actionEvent -> expandCommand.execute());
 
-        JButton makeXMLButton = makeButton("Отправить запрос", actionEvent -> mainFrame.showXMLRequestWindow(mainFrame.makeXML()));
+        JButton collapseTreeButton = new JButton("Свернуть дерево");
+        collapseTreeButton.addActionListener(actionEvent -> collapseCommand.execute());
+
+        JButton makeXMLButton = new JButton("Отправить запрос");
+        makeXMLButton.addActionListener(actionEvent -> {
+            try {
+                mainFrame.showXMLRequestWindow();
+            } catch (SOAPException | TransformerException | IOException e) {
+                JOptionPane.showMessageDialog(null, "Ошибка отправки сообщения");
+            }
+        });
 
         setLayout(new FlowLayout(FlowLayout.LEFT));
 
@@ -28,19 +35,4 @@ class TopMenu extends JPanel {
         add(makeXMLButton);
     }
 
-    private void chooseFolder() {
-        JFileChooser fileChooser = new JFileChooser();
-
-        fileChooser.setDialogTitle("Выбор директории");
-        fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-        File workingDirectory = new File(System.getProperty("user.dir"));
-        fileChooser.setCurrentDirectory(workingDirectory);
-
-        int result = fileChooser.showOpenDialog(this);
-
-        if (result == JFileChooser.APPROVE_OPTION) {
-            String path = fileChooser.getSelectedFile().getAbsolutePath();
-            mainFrame.refreshList(path);
-        }
-    }
 }

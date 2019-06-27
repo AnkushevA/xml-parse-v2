@@ -6,7 +6,6 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import java.awt.*;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 
@@ -32,7 +31,8 @@ class NodeEditMenu extends JPanel implements LeftMenuUpdateListener {
         nameLabel.setFont(nameLabel.getFont().deriveFont(20.0f));
         dataField = new JTextField(15);
 
-        removeButton = ButtonFactory.makeButton("-", actionEvent -> {
+        removeButton = new JButton("-");
+        removeButton.addActionListener(actionEvent -> {
             int[] selectedItems = itemsList.getSelectedIndices();
             if (selectedItems.length == 1) {
                 node.remove(selectedItems[0]);
@@ -41,7 +41,8 @@ class NodeEditMenu extends JPanel implements LeftMenuUpdateListener {
             }
         });
 
-        addButton = ButtonFactory.makeButton("+", actionEvent -> {
+        addButton = new JButton("+");
+        addButton.addActionListener(actionEvent -> {
             if (node != null) {
                 TextFieldNode textFieldNode = ((TextFieldNode) node.getUserObject());
                 String attribute = textFieldNode.getAttribute();
@@ -64,18 +65,14 @@ class NodeEditMenu extends JPanel implements LeftMenuUpdateListener {
             }
         });
 
-        okButton = ButtonFactory.makeButton("OK", actionEvent -> {
+        okButton = new JButton("OK");
+        okButton.addActionListener(actionEvent -> {
             if (node != null) {
                 if (!useHashMap) {
                     TextFieldNode textFieldNode = ((TextFieldNode) node.getUserObject());
                     if (shouldHaveEditFields(textFieldNode)) {
                         textFieldNode.setText(node.isLeaf() ? dataField.getText() : "");
                         textFieldNode.setIncluded(includeToOutput.isSelected());
-                        /*if (textFieldNode.getAttribute().equals("MName")) {
-                            setMNameParentString();
-                        } else if (textFieldNode.getAttribute().equals("primaryID")) {
-                            setPrimaryIDParentString();
-                        }*/
                     }
                     makeNodeAndChildrenEnabled(node, includeToOutput.isSelected());
                 } else{
@@ -89,6 +86,7 @@ class NodeEditMenu extends JPanel implements LeftMenuUpdateListener {
                 updateTreeModel();
             }
         });
+
         includeToOutput = new JCheckBox("Enabled");
         model = new DefaultListModel<>();
         itemsList = new JList<>(model);
@@ -99,19 +97,6 @@ class NodeEditMenu extends JPanel implements LeftMenuUpdateListener {
 
         setLayout(new GridBagLayout());
         setLeafEditPanel();
-    }
-
-    private void setPrimaryIDParentString() {
-        DefaultMutableTreeNode temp = (DefaultMutableTreeNode) node.getParent().getParent();
-        TextFieldNode itemNode = (TextFieldNode) temp.getUserObject();
-        if (itemNode.getAttribute().equals("item")) {
-            itemNode.setText(dataField.getText());
-        }
-    }
-
-    private void setMNameParentString() {
-        DefaultMutableTreeNode temp = (DefaultMutableTreeNode) node.getParent();
-        ((TextFieldNode) temp.getUserObject()).setText(dataField.getText());
     }
 
     private boolean shouldHaveEditFields(TextFieldNode textFieldNode) {
@@ -265,7 +250,7 @@ class NodeEditMenu extends JPanel implements LeftMenuUpdateListener {
         }
     }
 
-    private void cleanPanel() {
+    public void cleanPanel() {
         for (Component component : getComponents()) {
             remove(component);
             revalidate();

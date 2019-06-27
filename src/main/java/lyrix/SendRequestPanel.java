@@ -7,7 +7,7 @@ public class SendRequestPanel extends JPanel {
     private SendRequestFrame sendRequestFrame;
     private JTextArea requestTextArea;
 
-    public SendRequestPanel(String xmlString, SendRequestFrame sendRequestFrame) {
+    public SendRequestPanel(SendRequestFrame sendRequestFrame, String xmlString) {
         this.sendRequestFrame = sendRequestFrame;
         setLayout(new BorderLayout());
         requestTextArea = new JTextArea(30, 30);

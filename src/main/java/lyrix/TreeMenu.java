@@ -12,11 +12,9 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.soap.*;
-import javax.xml.transform.*;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 import java.awt.*;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Iterator;
 
@@ -32,13 +30,12 @@ class TreeMenu extends JPanel implements LeftMenuUpdateListener {
         tree.setCellEditor(new CheckBoxNodeEditor(tree, this));
         tree.setEditable(true);
 
-//        drawTree("C:\\Users\\BASS4x4\\IntelliJIDEAProjects\\xmlparse\\src\\main\\resources\\example1.xml");
         setLayout(new BorderLayout());
         add(tree, BorderLayout.CENTER);
     }
 
     @Override
-    public void update(String xmlPath) {
+    public void update(String xmlPath) throws ParserConfigurationException, SAXException, IOException {
         drawTree(xmlPath);
         mainFrame.setNodeEditTree(tree);
     }
@@ -51,25 +48,17 @@ class TreeMenu extends JPanel implements LeftMenuUpdateListener {
         mainFrame.showEditFields(node);
     }
 
-    void drawTree(String xmlPath) {
-        try {
-            DefaultMutableTreeNode node = getRootNode(xmlPath); //построить дерево
-            DefaultTreeModel treeModel = ((DefaultTreeModel) tree.getModel());
-            treeModel.setRoot(node);
-            treeModel.reload();
-
-        } catch (ParserConfigurationException | SAXException | IOException e) {
-            JOptionPane.showMessageDialog(null, "Невозможно отобразить дерево!");
-        }
+    void drawTree(String xmlPath) throws IOException, SAXException, ParserConfigurationException {
+        DefaultMutableTreeNode node = getRootNode(xmlPath);
+        DefaultTreeModel treeModel = ((DefaultTreeModel) tree.getModel());
+        treeModel.setRoot(node);
+        treeModel.reload();
     }
 
     private DefaultMutableTreeNode getRootNode(String xmlPath) throws ParserConfigurationException, SAXException, IOException {
         DefaultMutableTreeNode node = new DefaultMutableTreeNode("XML"); //корень дерева
 
-        DocumentBuilderFactory xmlBuilderFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder documentBuilder = xmlBuilderFactory.newDocumentBuilder();
-        xmlBuilderFactory.setIgnoringElementContentWhitespace(true);
-        xmlBuilderFactory.setIgnoringComments(true);
+        DocumentBuilder documentBuilder = getDocumentBuilder();
         File xmlFile = new File(xmlPath);
 
         Document xmlDocument = documentBuilder.parse(xmlFile);
@@ -83,6 +72,14 @@ class TreeMenu extends JPanel implements LeftMenuUpdateListener {
             }
         }
         return node;
+    }
+
+    private DocumentBuilder getDocumentBuilder() throws ParserConfigurationException {
+        DocumentBuilderFactory xmlBuilderFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder documentBuilder = xmlBuilderFactory.newDocumentBuilder();
+        xmlBuilderFactory.setIgnoringElementContentWhitespace(true);
+        xmlBuilderFactory.setIgnoringComments(true);
+        return documentBuilder;
     }
 
     private void addNode(Node childNode, DefaultMutableTreeNode parentNode) {
@@ -121,86 +118,55 @@ class TreeMenu extends JPanel implements LeftMenuUpdateListener {
         }
     }
 
-    String makeXML() {
-        try {
-            MessageFactory factory = MessageFactory.newInstance();
-            SOAPMessage soapMsg = factory.createMessage();
-            SOAPPart part = soapMsg.getSOAPPart();
+    SOAPMessage constructXMLFromTree() throws SOAPException {
+        MessageFactory factory = MessageFactory.newInstance();
+        SOAPMessage soapMsg = factory.createMessage();
+        SOAPPart part = soapMsg.getSOAPPart();
 
-            SOAPEnvelope envelope = part.getEnvelope();
+        SOAPEnvelope envelope = part.getEnvelope();
 
-            Iterator namespacePrefixes = envelope.getNamespacePrefixes();
-            while (namespacePrefixes.hasNext()) {
-                envelope.removeNamespaceDeclaration(((String) namespacePrefixes.next()));
-            }
+        Iterator namespacePrefixes = envelope.getNamespacePrefixes();
+        removeNamespaces(envelope, namespacePrefixes);
 
-            SOAPBody body = envelope.getBody();
+        SOAPBody body = envelope.getBody();
 
-            soapMsg.getSOAPHeader().setPrefix("soapenv");
-            body.setPrefix("soapenv");
-            envelope.setPrefix("soapenv");
-            envelope.addNamespaceDeclaration("car", "http://cardlibrary2.webservices.integration.css.aamsystems.com");
-            DefaultMutableTreeNode root = (DefaultMutableTreeNode) tree.getModel().getRoot();
-            int childCount = root.getChildCount();
+        soapMsg.getSOAPHeader().setPrefix("soapenv");
+        body.setPrefix("soapenv");
+        envelope.setPrefix("soapenv");
+        envelope.addNamespaceDeclaration("car", "http://cardlibrary2.webservices.integration.css.aamsystems.com");
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) tree.getModel().getRoot();
+        int childCount = root.getChildCount();
 
-            for (int i = 0; i < childCount; i++) {
-                DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) (tree.getModel().getChild(root, i));
-                TextFieldNode userObject = (TextFieldNode) treeNode.getUserObject();
-                if (userObject.getAttribute().toLowerCase().contains("body")) { //узлы внутри body
-                    TreeModel treeModel = tree.getModel();
-                    int count = treeNode.getChildCount();
-                    for (int j = 0; j < count; j++) {
-                        DefaultMutableTreeNode bodyChild = (DefaultMutableTreeNode) (treeModel.getChild(treeNode, j));
-                        addXMLChildNode(body, bodyChild, envelope);
-                    }
+        for (int i = 0; i < childCount; i++) {
+            DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) (tree.getModel().getChild(root, i));
+            TextFieldNode userObject = (TextFieldNode) treeNode.getUserObject();
+            if (userObject.getAttribute().toLowerCase().contains("body")) { //узлы внутри body
+                TreeModel treeModel = tree.getModel();
+                int count = treeNode.getChildCount();
+                for (int j = 0; j < count; j++) {
+                    DefaultMutableTreeNode bodyChild = (DefaultMutableTreeNode) (treeModel.getChild(treeNode, j));
+                    addXMLChildNode(body, bodyChild, envelope);
                 }
             }
-            return getXmlFormattedString(soapMsg);
-        } catch (SOAPException | IOException | TransformerException e) {
-            JOptionPane.showMessageDialog(null, "Невозможно создать XML!");
         }
-        return "";
+        return soapMsg;
     }
 
-    private String getXmlFormattedString(SOAPMessage soapMsg) throws SOAPException, IOException, TransformerException {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        soapMsg.writeTo(out);
-        String strMsg = new String(out.toByteArray());
-        StreamResult streamResult = new StreamResult(new StringWriter());
-        Source xmlInput = new StreamSource(new StringReader(strMsg));
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
-/*
-            transformer.transform(xmlInput,
-                    new StreamResult(new FileOutputStream("C:\\Users\\BASS4x4\\IntelliJIDEAProjects\\xmlparse\\src\\main\\resources\\outputXML.xml")));
-*/
-        transformer.transform(xmlInput, streamResult);
-        return streamResult.getWriter().toString();
-    }
-
-    private void addXMLChildNode(SOAPElement parent, DefaultMutableTreeNode childNode, SOAPEnvelope envelope) {
+    private void addXMLChildNode(SOAPElement parent, DefaultMutableTreeNode childNode, SOAPEnvelope envelope) throws SOAPException {
         TextFieldNode childTextFieldNode = (TextFieldNode) childNode.getUserObject();
         if (childTextFieldNode.isIncluded()) {
             SOAPElement soapElement = null;
             if (childNode.isLeaf()) {
                 if (!childTextFieldNode.getText().isEmpty()) {
-                    try {
-                        soapElement = parent.addChildElement(childTextFieldNode.getAttribute(), "car");
-                        soapElement.addTextNode(childTextFieldNode.getText());
-                    } catch (SOAPException e) {
-                        JOptionPane.showMessageDialog(null, "Ошибка добавления элемента в XML!");
-                    }
+                    soapElement = parent.addChildElement(childTextFieldNode.getAttribute(), "car");
+                    soapElement.addTextNode(childTextFieldNode.getText());
+
                 }
             } else {
-                try {
-                    if (parent instanceof SOAPBody) {
-                        soapElement = ((SOAPBody) parent).addBodyElement(envelope.createName(childTextFieldNode.getAttribute(), "car", "http://cardlibrary2.webservices.integration.css.aamsystems.com"));
-                    } else {
-                        soapElement = parent.addChildElement(childTextFieldNode.getAttribute(), "car");
-                    }
-                } catch (SOAPException e) {
-                    JOptionPane.showMessageDialog(null, "Ошибка добавления элемента в XML!");
+                if (parent instanceof SOAPBody) {
+                    soapElement = ((SOAPBody) parent).addBodyElement(envelope.createName(childTextFieldNode.getAttribute(), "car", "http://cardlibrary2.webservices.integration.css.aamsystems.com"));
+                } else {
+                    soapElement = parent.addChildElement(childTextFieldNode.getAttribute(), "car");
                 }
 
                 TreeModel treeModel = tree.getModel();
@@ -212,5 +178,13 @@ class TreeMenu extends JPanel implements LeftMenuUpdateListener {
             }
         }
     }
+
+    private void removeNamespaces(SOAPEnvelope envelope, Iterator namespacePrefixes) {
+        while (namespacePrefixes.hasNext()) {
+            envelope.removeNamespaceDeclaration(((String) namespacePrefixes.next()));
+        }
+    }
+
+
 
 }

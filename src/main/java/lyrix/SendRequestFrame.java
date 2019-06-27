@@ -8,10 +8,10 @@ public class SendRequestFrame extends JFrame {
     private SendRequestPanel sendRequestPanel;
     private GetRequestPanel getRequestPanel;
 
-    public SendRequestFrame(String xmlString) {
+    public SendRequestFrame(String xmlString, String answer) {
         super("Отправить запрос");
-        sendRequestPanel = new SendRequestPanel(xmlString, this);
-        getRequestPanel = new GetRequestPanel(this);
+        sendRequestPanel = new SendRequestPanel(this, xmlString);
+        getRequestPanel = new GetRequestPanel(this, answer);
 
         setSize(800, 800);
         centralSplitMenu = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(sendRequestPanel), new JScrollPane(getRequestPanel));
@@ -19,7 +19,8 @@ public class SendRequestFrame extends JFrame {
         add(centralSplitMenu, BorderLayout.CENTER);
     }
 
-    public void showText(String xmlString) {
+    public void showText(String xmlString, String answer) {
         sendRequestPanel.showText(xmlString);
+        getRequestPanel.showText(answer);
     }
 }
