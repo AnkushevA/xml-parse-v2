@@ -45,7 +45,7 @@ class MainFrame extends JFrame {
         CollapseTreeCommand collapseTreeCommand = new CollapseTreeCommand(treeMenu);
         nodeEditMenu = new NodeEditMenu(this, treeMenu.getTree());
         topMenu = new TopMenu(this, expandTreeCommand, collapseTreeCommand);
-
+        sendRequestFrame = new SendRequestFrame();
         addTopMenu();
         createTreeMenu();
         createNodeEditMenu();
@@ -110,32 +110,19 @@ class MainFrame extends JFrame {
         treeScrollPane.setBorder(BorderFactory.createTitledBorder("Tree view:"));
     }
 
-    void setNodeEditTree(JTree nodeEditTree) {
-        nodeEditMenu.setTree(nodeEditTree);
-    }
-
-    void expandTree(boolean expand) {
-        treeMenu.expandAll(expand);
-    }
-
     private SOAPMessage constructXMLFromTree() throws SOAPException {
         return treeMenu.constructXMLFromTree();
     }
 
-    private SOAPMessage callSoapWebService(SOAPMessage soapMessage) {
-        try {
-            String soapEndpointUrl = leftMenu.getWsdlLink().replace("?wsdl", "");
-            SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
-            SOAPConnection soapConnection = soapConnectionFactory.createConnection();
+    private SOAPMessage callSoapWebService(SOAPMessage soapMessage) throws SOAPException {
+        String soapEndpointUrl = leftMenu.getWsdlLink().replace("?wsdl", "");
+        SOAPConnectionFactory soapConnectionFactory = SOAPConnectionFactory.newInstance();
+        SOAPConnection soapConnection = soapConnectionFactory.createConnection();
 
-            SOAPMessage soapResponse = soapConnection.call(soapMessage, soapEndpointUrl);
+        SOAPMessage soapResponse = soapConnection.call(soapMessage, soapEndpointUrl);
 
-            soapConnection.close();
-            return soapResponse;
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(null, "Ошибка при отправке запроса.");
-        }
-        return null;
+        soapConnection.close();
+        return soapResponse;
     }
 
     private String getXmlFormattedString(SOAPMessage soapMsg) throws SOAPException, IOException, TransformerException {
@@ -151,25 +138,35 @@ class MainFrame extends JFrame {
         return streamResult.getWriter().toString();
     }
 
-    void showXMLRequestWindow() throws SOAPException, TransformerException, IOException {
-        SOAPMessage message = constructXMLFromTree();
-        String xmlFormattedString = getXmlFormattedString(message);
-        SOAPMessage soapMsg = callSoapWebService(message);
 
-        if (soapMsg != null) {
-            String xmlFormattedRespond = getXmlFormattedString(soapMsg);
-            if (sendRequestFrame == null) {
-                sendRequestFrame = new SendRequestFrame(xmlFormattedString, xmlFormattedRespond);
-                sendRequestFrame.pack();
-            }
-            sendRequestFrame.showText(xmlFormattedString, xmlFormattedRespond);
-            sendRequestFrame.setVisible(true);
-        }
+    void sendXmlRequest() throws SOAPException, TransformerException, IOException {
+        SOAPMessage requestMessage = constructXMLFromTree();
+        String xmlFormattedRequest = getXmlFormattedString(requestMessage);
+        SOAPMessage responseMessage = callSoapWebService(requestMessage);
+        String xmlFormattedRespond = getXmlFormattedString(responseMessage);
+
+        String actionName = leftMenu.getSelectedAction();
+        sendRequestFrame.addRequestObject(new RequestObject(xmlFormattedRequest, xmlFormattedRespond, actionName));
+        showXmlRequest();
+    }
+
+    void showXmlRequest() {
+/*        if (sendRequestFrame == null) {
+            sendRequestFrame = new SendRequestFrame();
+            sendRequestFrame.pack();
+        }*/
+        sendRequestFrame.setVisible(true);
     }
 
     void showEditFields(DefaultMutableTreeNode node) {
         nodeEditMenu.showEditFields(node);
     }
 
+    void setNodeEditTree(JTree nodeEditTree) {
+        nodeEditMenu.setTree(nodeEditTree);
+    }
 
+    void expandTree(boolean expand) {
+        treeMenu.expandAll(expand);
+    }
 }

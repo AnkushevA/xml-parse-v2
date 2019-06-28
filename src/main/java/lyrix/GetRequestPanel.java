@@ -7,7 +7,8 @@ public class GetRequestPanel extends JPanel {
     private SendRequestFrame sendRequestFrame;
     private JTextArea requestTextArea;
 
-    public GetRequestPanel(SendRequestFrame sendRequestFrame, String answer) {
+
+    public GetRequestPanel(SendRequestFrame sendRequestFrame) {
         this.sendRequestFrame = sendRequestFrame;
         setLayout(new BorderLayout());
         requestTextArea = new JTextArea(30, 30);
@@ -15,7 +16,6 @@ public class GetRequestPanel extends JPanel {
         requestTextArea.setEditable(false);
         requestTextArea.setWrapStyleWord(true);
         requestTextArea.setBorder(BorderFactory.createTitledBorder("Полученное сообщение"));
-        requestTextArea.setText(answer);
         add(requestTextArea, BorderLayout.CENTER);
     }
 

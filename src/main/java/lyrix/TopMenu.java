@@ -19,10 +19,15 @@ class TopMenu extends JPanel {
         JButton collapseTreeButton = new JButton("Свернуть дерево");
         collapseTreeButton.addActionListener(actionEvent -> collapseCommand.execute());
 
+        JButton showRequestsButton = new JButton("Отобразить запросы");
+        showRequestsButton.addActionListener(actionEvent -> {
+            mainFrame.showXmlRequest();
+        });
+
         JButton makeXMLButton = new JButton("Отправить запрос");
         makeXMLButton.addActionListener(actionEvent -> {
             try {
-                mainFrame.showXMLRequestWindow();
+                mainFrame.sendXmlRequest();
             } catch (SOAPException | TransformerException | IOException e) {
                 JOptionPane.showMessageDialog(null, "Ошибка отправки сообщения");
             }
@@ -33,6 +38,7 @@ class TopMenu extends JPanel {
         add(expandTreeButton);
         add(collapseTreeButton);
         add(makeXMLButton);
+        add(showRequestsButton);
     }
 
 }

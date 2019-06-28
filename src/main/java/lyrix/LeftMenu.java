@@ -34,7 +34,7 @@ class LeftMenu extends JPanel {
     private DefaultListModel<String> items;
     private HashMap<String, String> menuFiles;
     private JButton parseXmlsButton;
-    private String wsdlLink;
+    private String wsdlLink = "";
     private String selectedAction;
 
     LeftMenu(final MainFrame mainFrame) {
@@ -43,7 +43,7 @@ class LeftMenu extends JPanel {
         setLayout(new BorderLayout());
         parseXmlsButton = new JButton("Отобразить методы");
         parseXmlsButton.addActionListener(actionEvent -> {
-            String wsdlLink = JOptionPane.showInputDialog(mainFrame, "Вставьте ссылку:");
+            wsdlLink = JOptionPane.showInputDialog(mainFrame, "Вставьте ссылку:");
             if (!wsdlLink.isEmpty()) {
                 try {
                     createDirectoryForXmls();

@@ -181,9 +181,11 @@ class NodeEditMenu extends JPanel implements LeftMenuUpdateListener {
         gc.gridy = counter++;
         gc.weightx = 1;
         gc.anchor = GridBagConstraints.CENTER;
+        gc.insets = new Insets(0, 0, 15, 0);
         add(nameLabel, gc);
 
         int childCount = treeModel.getChildCount(node);
+        gc.insets = new Insets(0, 0, 0, 0);
         for (int i = 0; i < childCount; i++) {
             DefaultMutableTreeNode treeNode = (DefaultMutableTreeNode) (treeModel.getChild(node, i));
             TextFieldNode textFieldNode = (TextFieldNode) treeNode.getUserObject();
