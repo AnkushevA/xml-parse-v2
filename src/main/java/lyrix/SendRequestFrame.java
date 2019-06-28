@@ -41,7 +41,7 @@ public class SendRequestFrame extends JFrame {
         itemsList.setLayoutOrientation(JList.VERTICAL);
 
         requests = new HashMap<>();
-        deleteButton = new JButton();
+        deleteButton = new JButton("Удалить");
 
         deleteButton.addActionListener(new ActionListener() {
             @Override
@@ -52,14 +52,20 @@ public class SendRequestFrame extends JFrame {
                     String selectedValue = itemsList.getSelectedValue();
                     model.remove(selectedIndex);
                     requests.remove(selectedValue);
+                    resetView();
                 }
             }
         });
+
+        JPanel topPanel = new JPanel();
+        topPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
+        topPanel.add(deleteButton);
+
         JSplitPane menuSplitPale = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(itemsList), centralSplitMenu);
         menuSplitPale.setDividerLocation(150);
 
+        add(topPanel, BorderLayout.NORTH);
         add(menuSplitPale, BorderLayout.CENTER);
-        add(deleteButton, BorderLayout.SOUTH);
     }
 
     public void addRequestObject(RequestObject requestObject) {
@@ -73,5 +79,10 @@ public class SendRequestFrame extends JFrame {
     public void showRequestObject(RequestObject requestObject) {
         sendRequestPanel.showText(requestObject.getRequest());
         getRequestPanel.showText(requestObject.getResponse());
+    }
+
+    private void resetView() {
+        sendRequestPanel.showText("");
+        getRequestPanel.showText("");
     }
 }
